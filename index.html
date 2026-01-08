@@ -3,30 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Portal (SMART Demo)</title>
+    <title>Patient Portal V3.3 (Detailed Scenarios)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
 
     <style>
-        body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #f8fafc; }
-        
-        /* 表格樣式 */
-        .portal-table { width: 100%; text-align: left; border-collapse: collapse; }
-        .portal-table th { background-color: #f1f5f9; color: #475569; padding: 12px; font-size: 0.9rem; border-bottom: 2px solid #e2e8f0; font-weight: 700; }
-        .portal-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-        .portal-table tr:hover { background-color: #f8fafc; cursor: pointer; transition: background 0.15s; }
-        
-        /* 標籤樣式 */
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-right: 4px; margin-bottom: 4px;}
-        .tag-blue { background-color: #dbeafe; color: #1e40af; }
-        .tag-red { background-color: #fee2e2; color: #991b1b; }
-        .tag-gray { background-color: #f3f4f6; color: #4b5563; }
-
-        /* 動畫 */
-        .fade-in { animation: fadeIn 0.3s ease-out; }
+        body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #f1f5f9; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* 時間軸樣式 */
+        .timeline-line { position: absolute; left: 24px; top: 0; bottom: 0; width: 2px; background-color: #e2e8f0; z-index: 0; }
+        .timeline-item { position: relative; padding-left: 56px; margin-bottom: 24px; cursor: pointer; }
+        .timeline-dot { position: absolute; left: 16px; top: 16px; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; z-index: 10; box-shadow: 0 0 0 2px #cbd5e1; background-color: #94a3b8; transition: all 0.2s; }
+        
+        /* 狀態顏色 */
+        .status-AMB .timeline-dot { background-color: #3b82f6; box-shadow: 0 0 0 2px #bfdbfe; }
+        .status-EMER .timeline-dot { background-color: #ef4444; box-shadow: 0 0 0 2px #fecaca; }
+        .status-IMP .timeline-dot { background-color: #a855f7; box-shadow: 0 0 0 2px #e9d5ff; }
+
+        .timeline-item.active .timeline-card { border-left-color: #2563eb; background-color: #eff6ff; }
+        .timeline-item.active .timeline-dot { transform: scale(1.2); }
+        .timeline-card { background: white; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid transparent; transition: all 0.2s; }
+        .timeline-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        /* 表格樣式 */
+        .detail-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .detail-table th { background-color: #f8fafc; text-align: left; padding: 10px 12px; color: #475569; border-bottom: 2px solid #e2e8f0; font-weight: 700; white-space: nowrap; }
+        .detail-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: top; }
+        
+        /* 標籤 */
+        .badge { padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .badge-purple { background: #f3e8ff; color: #6b21a8; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800">
@@ -34,168 +45,239 @@
     <div id="scene-loading" class="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
         <h2 class="text-2xl font-bold text-gray-700">Patient Portal</h2>
-        <p class="text-gray-500 text-sm mt-2">Connecting to FHIR Server...</p>
+        <p class="text-gray-500 text-sm mt-2">Initializing SMART Launch...</p>
     </div>
 
     <div id="scene-app" class="hidden flex flex-col h-screen fade-in relative">
-        
-        <header class="bg-white h-16 border-b flex items-center justify-between px-6 flex-shrink-0 z-20 shadow-sm">
+        <header class="bg-white h-14 border-b flex items-center justify-between px-6 flex-shrink-0 z-20 shadow-sm">
             <div class="flex items-center gap-3">
-                <div class="bg-blue-600 text-white p-1.5 rounded"><i class="fas fa-heartbeat"></i></div>
-                <span class="font-bold text-xl text-slate-800 tracking-wide">Patient Portal</span>
-                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200">SMART Connected</span>
+                <div class="bg-blue-600 text-white p-1 rounded"><i class="fas fa-heartbeat"></i></div>
+                <span class="font-bold text-lg text-slate-800 tracking-wide">Patient Portal <span class="text-xs font-normal text-gray-400 ml-1">v3.3</span></span>
             </div>
-            <div class="flex items-center gap-4 text-sm">
-                <div class="flex items-center gap-2 text-slate-600 bg-slate-50 px-3 py-1.5 rounded-full border">
-                    <i class="fas fa-user-md text-lg"></i> <span>Dr. Lin</span>
+            <div class="flex items-center gap-3 text-sm">
+                <div class="flex items-center gap-2 text-slate-600 bg-slate-50 px-3 py-1 rounded-full border">
+                    <i class="fas fa-user-md"></i> <span>Dr. Lin</span>
                 </div>
             </div>
         </header>
 
-        <div class="flex flex-1 overflow-hidden relative">
-            
-            <main class="flex-1 bg-slate-50 p-8 overflow-y-auto w-full transition-all duration-300" id="main-panel">
+        <div class="flex flex-1 overflow-hidden">
+            <aside class="w-[420px] bg-slate-50 border-r border-gray-200 flex flex-col z-10 shadow-inner">
                 
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
-                    <h2 class="text-lg font-bold text-slate-700 mb-4 border-l-4 border-blue-500 pl-3">病患檢索條件</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1">病歷號 (Chart No)</label>
-                            <input type="text" id="q-chart" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="例如: 880123">
+                <div class="p-4 bg-white border-b border-gray-200 shadow-sm z-20">
+                    <h3 class="text-sm font-bold text-slate-700 mb-3 border-l-4 border-blue-500 pl-2">病歷查詢 (Patient Search)</h3>
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="q-chart" class="border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="病歷號 (ID)">
+                            <input type="text" id="q-id" class="border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="身分證號">
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1">身分證號 (ID No)</label>
-                            <input type="text" id="q-id" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="例如: A123456789">
+                        <div class="flex gap-2">
+                            <input type="text" id="q-name" class="flex-1 border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="姓名 (Name)">
+                            <button onclick="doSearch()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition shadow-sm">查詢</button>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1">姓名 (Name)</label>
-                            <input type="text" id="q-name" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="例如: 王小明">
-                        </div>
-                    </div>
-
-                    <div class="text-right">
-                        <button onclick="doSearch()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-sm transition flex items-center justify-center ml-auto">
-                            <i class="fas fa-search mr-2"></i> 查詢
-                        </button>
                     </div>
                 </div>
 
-                <div id="panel-patient-list" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden fade-in">
-                    <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                        <span class="font-bold text-slate-700">搜尋結果</span>
-                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold">Records found</span>
-                    </div>
-                    <table class="portal-table">
-                        <thead><tr><th>病歷號</th><th>姓名</th><th>性別 / 生日</th><th>身分證號</th><th>功能</th></tr></thead>
-                        <tbody id="tbody-patient"></tbody>
-                    </table>
-                </div>
-            </main>
-
-            <aside id="right-drawer" class="fixed inset-y-0 right-0 w-[600px] bg-white shadow-2xl z-40 transform translate-x-full transition-transform duration-300 ease-in-out border-l border-gray-200 flex flex-col">
-                
-                <div class="px-6 py-4 border-b flex justify-between items-center bg-blue-50">
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-800" id="drawer-title">--</h3>
-                        <p class="text-xs text-slate-500" id="drawer-subtitle">--</p>
-                    </div>
-                    <button onclick="closeDrawer()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
-                        <i class="fas fa-times text-lg"></i>
-                    </button>
+                <div id="patient-list-container" class="hidden flex-1 overflow-y-auto bg-white p-2">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">搜尋結果</div>
+                    <div id="patient-list-items" class="space-y-1"></div>
                 </div>
 
-                <div class="flex-1 overflow-y-auto bg-white relative">
-                    <div id="drawer-list-view" class="p-0">
-                        <div id="drawer-list-content"></div>
+                <div id="timeline-wrapper" class="hidden flex-1 flex flex-col overflow-hidden bg-slate-50">
+                    <div class="px-4 py-3 bg-blue-50 border-b border-blue-100 flex justify-between items-center flex-shrink-0">
+                        <div>
+                            <div class="font-bold text-blue-900 text-lg flex items-center cursor-pointer hover:underline" onclick="backToPatientList()">
+                                <i class="fas fa-chevron-left mr-2 text-sm"></i><span id="ph-name">--</span>
+                            </div>
+                            <div class="text-xs text-blue-600 ml-5" id="ph-id">--</div>
+                        </div>
                     </div>
-                    <div id="drawer-detail-view" class="hidden p-6 fade-in">
-                        <button onclick="backToDrawerList()" class="mb-4 text-sm text-blue-600 hover:underline flex items-center font-bold">
-                            <i class="fas fa-chevron-left mr-1"></i> 返回就醫列表
-                        </button>
-                        <div id="detail-content" class="space-y-6"></div>
+                    <div class="flex-1 overflow-y-auto p-4 relative">
+                        <div class="timeline-line"></div>
+                        <div id="timeline-items"></div>
                     </div>
+                </div>
+
+                <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-gray-400">
+                    <i class="fas fa-search text-4xl mb-3 text-gray-300"></i>
+                    <p class="text-sm">請輸入條件查詢病歷</p>
+                    <p class="text-xs mt-1 text-gray-300">提示：輸入空白可列出所有測試病患</p>
                 </div>
             </aside>
 
-            <div id="drawer-backdrop" onclick="closeDrawer()" class="fixed inset-0 bg-black bg-opacity-20 z-30 hidden transition-opacity"></div>
+            <main class="flex-1 bg-white overflow-y-auto p-8 relative" id="right-panel">
+                <div id="detail-empty" class="h-full flex flex-col items-center justify-center text-gray-300">
+                    <i class="fas fa-file-medical-alt text-6xl mb-4"></i>
+                    <p class="text-lg font-bold text-gray-400">請由左側時間軸選擇就醫紀錄</p>
+                </div>
 
+                <div id="detail-content" class="hidden max-w-6xl mx-auto animate-fade-in">
+                    <div class="flex justify-between items-end border-b pb-4 mb-6">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <span class="text-2xl font-bold text-slate-800" id="dt-date">--</span>
+                                <span class="px-3 py-1 rounded-full text-sm font-bold" id="dt-type-badge">--</span>
+                            </div>
+                            <div class="text-slate-500 text-sm">主治醫師：<span class="font-bold text-slate-700" id="dt-dr">--</span></div>
+                        </div>
+                        <div class="text-right">
+                            <span class="block text-xs text-slate-400 uppercase">主要診斷 (Diagnosis)</span>
+                            <span class="font-bold text-blue-700 text-lg" id="dt-dx">--</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <h4 class="font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-user-md text-blue-500 mr-2"></i>主訴與診療紀錄</h4>
+                        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200 text-sm leading-relaxed space-y-3">
+                            <div><span class="font-bold text-slate-500 block mb-1">Subjective (主訴):</span> <span id="dt-s" class="text-slate-800">--</span></div>
+                            <div class="border-t border-slate-200 pt-2"><span class="font-bold text-slate-500 block mb-1">Objective (客觀):</span> <span id="dt-o" class="text-slate-800">--</span></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <h4 class="font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-pills text-yellow-500 mr-2"></i>用藥資料 (MedicationRequest)</h4>
+                        <div class="border border-slate-200 rounded-lg overflow-hidden">
+                            <table class="detail-table">
+                                <thead class="bg-yellow-50 text-yellow-800">
+                                    <tr><th class="w-1/3">藥品名稱</th><th>用法用量</th><th>途徑</th><th class="text-center">天數</th></tr>
+                                </thead>
+                                <tbody id="dt-meds-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <h4 class="font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-flask text-red-500 mr-2"></i>檢驗檢查結果 (Observation)</h4>
+                        <div class="border border-slate-200 rounded-lg overflow-hidden">
+                            <table class="detail-table">
+                                <thead class="bg-slate-100 text-slate-600">
+                                    <tr>
+                                        <th class="w-1/3">檢驗項目 (Item)</th>
+                                        <th>結果數值</th>
+                                        <th>單位</th>
+                                        <th>參考值</th>
+                                        <th class="text-center">異常</th>
+                                        <th class="text-right">報告日期</th> </tr>
+                                </thead>
+                                <tbody id="dt-labs-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
     <script>
         // ==========================================
-        // 1. Mock Data (處方結構已優化)
+        // 1. Mock Data (豐富情境版)
         // ==========================================
-        const db = {
-            "A123": {
-                id: "A123", name: "王小明 (Wang, Xiao-Ming)", gender: "Male", dob: "1985-05-20", chart: "880123", govId: "A123456789",
+        const db = [
+            {
+                id: "P001", name: "王小明", gender: "男", dob: "1985-05-20", chart: "880123", govId: "A123456789",
                 encounters: [
                     {
-                        id: "ENC001", date: "2024-12-25", type: "家醫科門診", dr: "Dr. Lee",
-                        conditions: ["J06.9 急性上呼吸道感染", "E11.9 第二型糖尿病", "K21.9 胃食道逆流"],
+                        // 情境 A: 糖尿病門診 (慢性病)
+                        id: "ENC-01", date: "2024-12-25", classCode: "AMB", typeName: "門診", dept: "新陳代謝科", dr: "Dr. Lee",
+                        dx: "E11.9 第二型糖尿病",
                         details: {
-                            s: "喉嚨痛、吞嚥困難，咳嗽有痰約三天。最近血糖控制不佳。", 
-                            o: "Throat redness(++), Tonsil enlargement(+). Chest: Clear.", 
-                            // 修正：藥品改為物件結構
+                            s: "最近容易口渴，多尿，體重減輕。無視力模糊。",
+                            o: "BP: 135/85 mmHg. Body Wt: 82kg. Foot sensation: Intact.",
                             meds: [
-                                { name: "Acetaminophen 500mg", usage: "1 TAB QID", route: "PO", days: "3" },
-                                { name: "Medicon-A", usage: "1 TAB TID", route: "PO", days: "3" },
-                                { name: "Metformin 500mg", usage: "1 TAB BID", route: "PO", days: "28" }
+                                {name: "Metformin 500mg", use: "1 TAB BID", route: "PO", days: "28"},
+                                {name: "Januvia 100mg", use: "1 TAB QD", route: "PO", days: "28"}
                             ],
                             labs: [
-                                {n:"WBC", v:"12500 /uL", f:"High"}, 
-                                {n:"CRP", v:"1.2 mg/dL", f:"High"},
-                                {n:"Glucose AC", v:"145 mg/dL", f:"High"},
-                                {n:"HbA1c", v:"7.2 %", f:"High"},
-                                {n:"Creatinine", v:"1.1 mg/dL", f:"Normal"}
+                                {n:"Glucose AC", v:"145", u:"mg/dL", ref:"70-99", f:"High", d:"2024-12-25 09:15"},
+                                {n:"HbA1c", v:"7.2", u:"%", ref:"4.0-6.0", f:"High", d:"2024-12-25 09:15"},
+                                {n:"T-Cho", v:"180", u:"mg/dL", ref:"<200", f:"Normal", d:"2024-12-25 09:15"},
+                                {n:"TG", v:"160", u:"mg/dL", ref:"<150", f:"High", d:"2024-12-25 09:15"},
+                                {n:"Creatinine", v:"0.9", u:"mg/dL", ref:"0.7-1.2", f:"Normal", d:"2024-12-25 09:15"}
                             ]
                         }
                     },
                     {
-                        id: "ENC002", date: "2024-10-12", type: "皮膚科門診", dr: "Dr. Chen",
-                        conditions: ["L23.9 接觸性皮膚炎", "L50.0 過敏性蕁麻疹"],
+                        // 情境 B: 術後回診 (外科) - 資料極簡
+                        id: "ENC-02", date: "2024-11-22", classCode: "AMB", typeName: "門診", dept: "一般外科", dr: "Dr. Chang",
+                        dx: "Z09.0 手術後追蹤",
                         details: {
-                            s: "雙手前臂出現紅疹，發癢難耐。疑似接觸清潔劑。", 
-                            o: "Skin rash over bilateral forearms. Weals(+).", 
+                            s: "傷口癒合良好，無紅腫熱痛，食慾恢復正常。",
+                            o: "Abdomen: Soft. Wound clean, stitches removed today. No hernia.",
+                            meds: [], // 沒開藥
+                            labs: []  // 沒抽血
+                        }
+                    },
+                    {
+                        // 情境 C: 急性闌尾炎 (住院手術)
+                        id: "ENC-03", date: "2024-11-15", classCode: "IMP", typeName: "住院", dept: "一般外科", dr: "Dr. Chang",
+                        dx: "K35.80 急性闌尾炎",
+                        details: {
+                            s: "右下腹劇烈疼痛持續24小時，伴隨噁心、發燒。轉移痛(+)。",
+                            o: "Temp: 38.5°C. McBurney point tenderness(+), Rebound pain(+). CT scan confirmed appendicitis.",
                             meds: [
-                                { name: "Allegra 60mg", usage: "1 TAB BID", route: "PO", days: "5" },
-                                { name: "Rinderon V Cream", usage: "Apply BID", route: "Topical", days: "7" },
-                                { name: "Calamine Lotion", usage: "Apply PRN", route: "Topical", days: "5" }
+                                {name: "Cefazolin 1g", use: "Q8H", route: "IV", days: "3"},
+                                {name: "Gentamicin 80mg", use: "Q12H", route: "IV", days: "3"},
+                                {name: "Acetaminophen 500mg", use: "Q6H PRN", route: "PO", days: "3"},
+                                {name: "Ultracet", use: "Q6H PRN", route: "PO", days: "3"}
                             ],
                             labs: [
-                                {n:"IgE Total", v:"250 IU/mL", f:"High"},
-                                {n:"Eosinophil", v:"6.5 %", f:"High"}
-                            ] 
+                                {n:"WBC", v:"15800", u:"/uL", ref:"4000-10000", f:"High", d:"2024-11-15 08:30"},
+                                {n:"Neutrophil", v:"88", u:"%", ref:"40-75", f:"High", d:"2024-11-15 08:30"},
+                                {n:"CRP", v:"5.2", u:"mg/dL", ref:"<0.5", f:"High", d:"2024-11-15 08:30"},
+                                {n:"Na", v:"138", u:"mEq/L", ref:"135-145", f:"Normal", d:"2024-11-15 08:30"},
+                                {n:"K", v:"3.8", u:"mEq/L", ref:"3.5-5.0", f:"Normal", d:"2024-11-15 08:30"}
+                            ]
                         }
                     }
                 ]
             },
-            "B456": {
-                id: "B456", name: "林美珠 (Lin, Mei-Chu)", gender: "Female", dob: "1960-08-15", chart: "990567", govId: "B987654321",
+            {
+                id: "P002", name: "林美珠", gender: "女", dob: "1960-08-15", chart: "990567", govId: "B987654321",
                 encounters: [
                     {
-                        id: "ENC003", date: "2025-01-02", type: "心臟內科門診", dr: "Dr. Wang",
-                        conditions: ["I10 原發性高血壓", "E78.5 高脂血症", "I25.10 冠狀動脈疾病"],
+                        // 情境 D: 心絞痛 (急診)
+                        id: "ENC-04", date: "2024-10-10", classCode: "EMER", typeName: "急診", dept: "急診醫學科", dr: "Dr. Wang",
+                        dx: "I20.9 心絞痛",
                         details: {
-                            s: "定期回診，最近血壓控制穩定。無胸痛。", 
-                            o: "BP: 130/80 mmHg, HR: 72 bpm. Heart: Regular.", 
+                            s: "突發性胸悶痛，輻射至左肩，冒冷汗，持續約30分鐘。",
+                            o: "BP: 160/90 mmHg. HR: 95. ECG: T-wave inversion V1-V4. Chest auscultation: Clear.",
                             meds: [
-                                { name: "Norvasc 5mg", usage: "1 TAB QD", route: "PO", days: "28" },
-                                { name: "Lipitor 10mg", usage: "1 TAB QD", route: "PO", days: "28" },
-                                { name: "Bokey 100mg", usage: "1 TAB QD", route: "PO", days: "28" }
+                                {name: "NTG 0.6mg", use: "STAT", route: "SL", days: "1"},
+                                {name: "Aspirin 300mg", use: "STAT", route: "PO", days: "1"},
+                                {name: "Plavix 300mg", use: "STAT", route: "PO", days: "1"},
+                                {name: "Morphine 5mg", use: "STAT", route: "IV", days: "1"}
                             ],
                             labs: [
-                                {n:"T-Cho", v:"190 mg/dL", f:"Normal"},
-                                {n:"LDL-C", v:"110 mg/dL", f:"High"},
-                                {n:"TG", v:"145 mg/dL", f:"Normal"},
-                                {n:"GPT/ALT", v:"32 U/L", f:"Normal"}
+                                {n:"Troponin-I", v:"0.03", u:"ng/mL", ref:"<0.04", f:"Normal", d:"2024-10-10 20:10"},
+                                {n:"CK-MB", v:"18", u:"U/L", ref:"<25", f:"Normal", d:"2024-10-10 20:10"},
+                                {n:"D-Dimer", v:"250", u:"ng/mL", ref:"<500", f:"Normal", d:"2024-10-10 20:10"},
+                                {n:"WBC", v:"8500", u:"/uL", ref:"4000-10000", f:"Normal", d:"2024-10-10 20:10"}
+                            ]
+                        }
+                    },
+                    {
+                        // 情境 E: 高血壓慢性處方 (門診)
+                        id: "ENC-05", date: "2024-10-20", classCode: "AMB", typeName: "門診", dept: "心臟內科", dr: "Dr. Chen",
+                        dx: "I10 原發性高血壓",
+                        details: {
+                            s: "規則服藥，最近在家量血壓約 130/80 mmHg，無頭暈。",
+                            o: "BP: 132/82 mmHg. HR: 72 bpm. Heart: Regular beat, no murmur.",
+                            meds: [
+                                {name: "Norvasc 5mg", use: "1 TAB QD", route: "PO", days: "28"},
+                                {name: "Concor 5mg", use: "0.5 TAB QD", route: "PO", days: "28"},
+                                {name: "Bokey 100mg", use: "1 TAB QD", route: "PO", days: "28"}
+                            ],
+                            labs: [
+                                {n:"K", v:"4.2", u:"mEq/L", ref:"3.5-5.0", f:"Normal", d:"2024-10-20 10:00"},
+                                {n:"Creatinine", v:"0.9", u:"mg/dL", ref:"0.5-1.2", f:"Normal", d:"2024-10-20 10:00"},
+                                {n:"AST/GOT", v:"25", u:"U/L", ref:"<40", f:"Normal", d:"2024-10-20 10:00"},
+                                {n:"ALT/GPT", v:"30", u:"U/L", ref:"<40", f:"Normal", d:"2024-10-20 10:00"}
                             ]
                         }
                     }
                 ]
             }
-        };
+        ];
 
         // ==========================================
         // 2. 系統啟動
@@ -208,190 +290,183 @@
         };
 
         let currentPatientId = null;
+        let currentEncounters = [];
 
         // ==========================================
-        // 3. 複合搜尋邏輯
+        // 3. 搜尋邏輯
         // ==========================================
         function doSearch() {
             const chart = document.getElementById('q-chart').value.trim();
             const govId = document.getElementById('q-id').value.trim();
             const name = document.getElementById('q-name').value.trim();
             
-            const tbody = document.getElementById('tbody-patient');
-            tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Searching...</td></tr>';
-            document.getElementById('panel-patient-list').classList.remove('hidden');
+            resetUI();
 
-            setTimeout(() => {
-                tbody.innerHTML = '';
-                
-                const results = Object.values(db).filter(p => {
-                    let match = true;
-                    if (chart && !p.chart.includes(chart)) match = false;
-                    if (govId && !p.govId.includes(govId)) match = false;
-                    if (name && !p.name.includes(name)) match = false;
-                    
-                    if (!chart && !govId && !name) return true; 
-                    
-                    return match;
-                });
+            const results = db.filter(p => {
+                if (!chart && !govId && !name) return true;
+                let match = false;
+                if (chart && p.chart.includes(chart)) match = true;
+                if (govId && p.govId.includes(govId)) match = true;
+                if (name && p.name.includes(name)) match = true;
+                return match;
+            });
 
-                if (results.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">查無資料</td></tr>';
-                } else {
-                    results.forEach(p => {
-                        tbody.innerHTML += `
-                            <tr onclick="openRightDrawer('${p.id}')">
-                                <td class="font-mono text-blue-700 font-bold">${p.chart}</td>
-                                <td class="font-bold">${p.name}</td>
-                                <td>${p.gender} / ${p.dob}</td>
-                                <td>${p.govId}</td>
-                                <td><button class="text-xs bg-blue-600 text-white px-3 py-1 rounded font-bold hover:bg-blue-700 shadow-sm">調閱</button></td>
-                            </tr>`;
-                    });
-                }
-            }, 300);
+            if (results.length === 0) {
+                alert("查無資料");
+                document.getElementById('empty-state').classList.remove('hidden');
+                return;
+            }
+
+            renderPatientList(results);
         }
 
-        // ==========================================
-        // 4. 右側滑動面板邏輯
-        // ==========================================
-        
-        function openRightDrawer(patientId) {
-            currentPatientId = patientId;
-            const p = db[patientId];
-            
-            document.getElementById('drawer-title').innerText = p.name;
-            document.getElementById('drawer-subtitle').innerText = `Chart: ${p.chart} | ID: ${p.govId}`;
-            
-            renderDrawerList(p);
-
-            document.getElementById('right-drawer').classList.remove('translate-x-full');
-            document.getElementById('drawer-backdrop').classList.remove('hidden');
+        function resetUI() {
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('timeline-wrapper').classList.add('hidden');
+            document.getElementById('patient-list-container').classList.add('hidden');
+            document.getElementById('detail-content').classList.add('hidden');
+            document.getElementById('detail-empty').classList.remove('hidden');
         }
 
-        function closeDrawer() {
-            document.getElementById('right-drawer').classList.add('translate-x-full');
-            document.getElementById('drawer-backdrop').classList.add('hidden');
-            setTimeout(backToDrawerList, 300);
-        }
-
-        function renderDrawerList(patient) {
-            const container = document.getElementById('drawer-list-content');
+        function renderPatientList(list) {
+            const container = document.getElementById('patient-list-items');
             container.innerHTML = '';
+            document.getElementById('patient-list-container').classList.remove('hidden');
 
-            patient.encounters.forEach((enc, index) => {
-                const dxTags = enc.conditions.slice(0, 2).map(c => 
-                    `<span class="tag tag-blue">${c.split(' ')[0]}</span>`
-                ).join('');
-                const moreDx = enc.conditions.length > 2 ? `<span class="text-xs text-gray-400">+${enc.conditions.length - 2}</span>` : '';
-
-                const item = document.createElement('div');
-                item.className = "p-4 border-b border-gray-100 hover:bg-slate-50 cursor-pointer transition group";
-                item.onclick = () => showDetailInDrawer(index);
-                item.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition">${enc.date}</span>
-                        <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">${enc.type}</span>
+            list.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-3 bg-white border border-gray-100 rounded-lg hover:border-blue-300 hover:shadow-md cursor-pointer transition mb-2";
+                div.onclick = () => selectPatient(p.id);
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-slate-800">${p.name} <span class="text-xs text-gray-500 font-normal ml-1">${p.gender} / ${p.dob}</span></div>
+                        <div class="text-xs text-blue-600 font-mono">Chart: ${p.chart}</div>
                     </div>
-                    <div class="mb-2 text-sm text-gray-600"><i class="fas fa-user-md mr-1"></i> ${enc.dr}</div>
-                    <div class="mb-1">${dxTags} ${moreDx}</div>
-                    <div class="text-xs text-gray-400 mt-2 flex justify-end items-center group-hover:text-blue-500">
-                        查看詳情 <i class="fas fa-arrow-right ml-1"></i>
-                    </div>
+                    <div class="text-slate-400"><i class="fas fa-chevron-right"></i></div>
                 `;
-                container.appendChild(item);
+                container.appendChild(div);
             });
         }
 
         // ==========================================
-        // 5. 詳細資料 (在 Drawer 內顯示)
+        // 4. 時間軸 (Timeline)
         // ==========================================
-        
-        function showDetailInDrawer(index) {
-            const p = db[currentPatientId];
-            const enc = p.encounters[index];
+        function selectPatient(pid) {
+            const p = db.find(x => x.id === pid);
+            currentPatientId = pid;
+            currentEncounters = p.encounters;
+
+            document.getElementById('patient-list-container').classList.add('hidden');
+            document.getElementById('timeline-wrapper').classList.remove('hidden');
+
+            document.getElementById('ph-name').innerText = p.name;
+            document.getElementById('ph-id').innerText = `${p.chart} | ${p.govId}`;
+
+            renderTimeline(currentEncounters);
+        }
+
+        function backToPatientList() {
+            document.getElementById('timeline-wrapper').classList.add('hidden');
+            document.getElementById('patient-list-container').classList.remove('hidden');
+            document.getElementById('detail-content').classList.add('hidden');
+            document.getElementById('detail-empty').classList.remove('hidden');
+        }
+
+        function renderTimeline(encounters) {
+            const container = document.getElementById('timeline-items');
+            container.innerHTML = '';
+
+            encounters.forEach((enc, index) => {
+                let statusClass = "status-AMB"; 
+                let badgeClass = "badge-blue";
+                
+                if (enc.classCode === 'EMER') { statusClass = "status-EMER"; badgeClass = "badge-red"; }
+                else if (enc.classCode === 'IMP') { statusClass = "status-IMP"; badgeClass = "badge-purple"; }
+
+                const el = document.createElement('div');
+                el.className = `timeline-item ${statusClass}`;
+                el.id = `timeline-item-${index}`;
+                el.onclick = () => loadEncounterDetail(index);
+                
+                el.innerHTML = `
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-card">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-slate-800">${enc.date}</span>
+                            <span class="badge ${badgeClass}">${enc.typeName}</span>
+                        </div>
+                        <div class="text-sm text-gray-600 mb-1">${enc.dept} - ${enc.dr}</div>
+                        <div class="text-xs text-gray-500 font-bold truncate" title="${enc.dx}">${enc.dx}</div>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        // ==========================================
+        // 5. 詳細資料 (Detail)
+        // ==========================================
+        function loadEncounterDetail(index) {
+            document.querySelectorAll('.timeline-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`timeline-item-${index}`).classList.add('active');
+
+            document.getElementById('detail-empty').classList.add('hidden');
+            document.getElementById('detail-content').classList.remove('hidden');
+
+            const enc = currentEncounters[index];
             const d = enc.details;
 
-            document.getElementById('drawer-list-view').classList.add('hidden');
-            document.getElementById('drawer-detail-view').classList.remove('hidden');
-
-            const content = document.getElementById('detail-content');
+            // Header
+            document.getElementById('dt-date').innerText = enc.date;
+            document.getElementById('dt-dr').innerText = enc.dr;
+            document.getElementById('dt-dx').innerText = enc.dx;
             
-            const conditionList = enc.conditions.map(c => 
-                `<li class="mb-1 text-slate-700 flex items-start"><i class="fas fa-check-circle text-blue-500 mr-2 mt-1"></i><span>${c}</span></li>`
-            ).join('');
+            const badge = document.getElementById('dt-type-badge');
+            badge.innerText = enc.typeName;
+            badge.className = "px-3 py-1 rounded-full text-sm font-bold " + 
+                (enc.classCode === 'EMER' ? "bg-red-100 text-red-700" : 
+                 enc.classCode === 'IMP' ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700");
 
-            const labRows = d.labs.map(l => `
-                <tr class="border-b last:border-0 hover:bg-gray-50">
-                    <td class="py-2 text-gray-600">${l.n}</td>
-                    <td class="py-2 font-bold text-gray-800">${l.v}</td>
-                    <td class="py-2 text-right">${l.f === 'High' ? '<span class="tag tag-red">High</span>' : '<span class="text-green-500 text-xs"><i class="fas fa-check"></i></span>'}</td>
-                </tr>
-            `).join('');
+            // SOAP
+            document.getElementById('dt-s').innerText = d.s;
+            document.getElementById('dt-o').innerText = d.o;
 
-            // 新增：用藥列表 HTML 產生器
-            const medRows = d.meds.map(m => `
-                <tr class="border-b last:border-0 hover:bg-yellow-50">
-                    <td class="py-2 text-sm font-bold text-slate-700">${m.name}</td>
-                    <td class="py-2 text-sm text-slate-600">${m.usage}</td>
-                    <td class="py-2 text-sm text-slate-600">${m.route}</td>
-                    <td class="py-2 text-sm text-slate-600 text-center">${m.days}</td>
-                </tr>
-            `).join('');
+            // Meds (表格)
+            const medsTbody = document.getElementById('dt-meds-tbody');
+            if(d.meds.length === 0) {
+                medsTbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-400">無處方紀錄</td></tr>`;
+            } else {
+                medsTbody.innerHTML = d.meds.map(m => `
+                    <tr class="hover:bg-yellow-50">
+                        <td class="font-bold text-slate-700">${m.name}</td>
+                        <td>${m.use}</td>
+                        <td>${m.route}</td>
+                        <td class="text-center">${m.days} 天</td>
+                    </tr>
+                `).join('');
+            }
 
-            content.innerHTML = `
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-4">
-                    <div class="flex justify-between font-bold text-lg mb-1">
-                        <span>${enc.date}</span>
-                        <span class="text-blue-600">${enc.type}</span>
-                    </div>
-                    <div class="text-sm text-gray-500">主治醫師: ${enc.dr}</div>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-slate-700 border-b pb-2 mb-3"><i class="fas fa-clipboard-list mr-2"></i>診斷 (Diagnosis)</h4>
-                    <ul class="text-sm pl-1">${conditionList}</ul>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-slate-700 border-b pb-2 mb-3"><i class="fas fa-stethoscope mr-2"></i>SOAP 紀錄</h4>
-                    <div class="text-sm space-y-2 bg-white p-2">
-                        <div class="mb-2"><span class="font-bold text-gray-500 block mb-1">Subjective (主訴):</span> ${d.s}</div>
-                        <div><span class="font-bold text-gray-500 block mb-1">Objective (客觀):</span> ${d.o}</div>
-                    </div>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-slate-700 border-b pb-2 mb-3"><i class="fas fa-pills mr-2"></i>處方用藥 (Medications)</h4>
-                    <table class="w-full text-left">
-                        <thead class="bg-yellow-100 text-yellow-800 text-xs uppercase">
-                            <tr>
-                                <th class="py-1 px-2 rounded-l">藥品名稱</th>
-                                <th class="py-1 px-2">服法</th>
-                                <th class="py-1 px-2">途徑</th>
-                                <th class="py-1 px-2 rounded-r text-center">天數</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${medRows}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-slate-700 border-b pb-2 mb-3"><i class="fas fa-flask mr-2"></i>檢驗報告 (Labs)</h4>
-                    <table class="w-full text-sm">
-                        ${labRows}
-                    </table>
-                </div>
-            `;
+            // Labs (表格 - 新增日期欄位)
+            const labsTbody = document.getElementById('dt-labs-tbody');
+            if(d.labs.length === 0) {
+                labsTbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-400">無檢驗資料</td></tr>`;
+            } else {
+                labsTbody.innerHTML = d.labs.map(l => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="text-slate-700">${l.n}</td>
+                        <td class="font-bold text-slate-900">${l.v}</td>
+                        <td class="text-xs text-gray-500">${l.u}</td>
+                        <td class="text-xs text-gray-500">${l.ref}</td>
+                        <td class="text-center">
+                            ${l.f === 'High' ? '<span class="badge badge-red">H</span>' : 
+                              l.f === 'Low' ? '<span class="badge bg-yellow-100 text-yellow-800">L</span>' : 
+                              '<span class="text-green-500"><i class="fas fa-check"></i></span>'}
+                        </td>
+                        <td class="text-right text-xs text-gray-500">${l.d}</td>
+                    </tr>
+                `).join('');
+            }
         }
-
-        function backToDrawerList() {
-            document.getElementById('drawer-detail-view').classList.add('hidden');
-            document.getElementById('drawer-list-view').classList.remove('hidden');
-        }
-
     </script>
 </body>
 </html>
